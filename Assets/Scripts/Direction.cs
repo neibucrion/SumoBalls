@@ -10,6 +10,9 @@ public class Direction : MonoBehaviour {
     public bool torque = true;
 
     [HideInInspector]
+    public bool actif = false;
+
+    [HideInInspector]
     public Vector3 positionInitiale;
     [HideInInspector]
     public Vector3 direction;
@@ -23,7 +26,12 @@ public class Direction : MonoBehaviour {
     void Update () {
 		if (ia)
         {
-            direction = GetComponent<IANeurone>().trouveDirection();
+            IANeurone iaObjet = GetComponent<IANeurone>();
+            direction = Vector3.zero;
+            if (!actif)
+                actif = iaObjet.adversaireActif();
+            else
+                direction = iaObjet.trouveDirection();
         }
         else
         {
@@ -38,6 +46,10 @@ public class Direction : MonoBehaviour {
         float dirX = Input.GetAxis(nomHorizontal);
         float dirZ = Input.GetAxis(nomVertical);
         direction = new Vector3(dirX, 0.0f, dirZ);
+        if (direction.magnitude > 0.25f)
+        {
+            actif = true;
+        }
     }
 
     void calculeDirection()

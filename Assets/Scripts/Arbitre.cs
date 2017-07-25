@@ -82,5 +82,6 @@ public class Arbitre : MonoBehaviour {
         rigid.angularVelocity = Vector3.zero;
         Direction dirJoueur = joueur.GetComponent<Direction>();
         rigid.MovePosition(dirJoueur.positionInitiale);
+        dirJoueur.actif = false;
     }
 }

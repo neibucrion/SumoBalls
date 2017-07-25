@@ -19,11 +19,17 @@ public class IANeurone : MonoBehaviour {
     private static List<DataSet> dataSets;
     private double[] derniereEntree = { };
 
+    Direction directionAdversaire;
+    Direction directionIA;
+
     // Use this for initialization
-    void Start () {
+    void Start ()
+    {
         chargeur = new ChargeurTableaux();
         net = new NeuralNet(8, 8, 4);
         dataSets = new List<DataSet>();
+        directionAdversaire = adversaire.GetComponent<Direction>();
+        directionIA = GetComponent<Direction>();
         entraineReseau();
     }
 
@@ -37,6 +43,11 @@ public class IANeurone : MonoBehaviour {
             dataSets.Add(new DataSet(inputs, desired));
             net.Train(dataSets, MinimumError);
         }
+    }
+
+    public bool adversaireActif()
+    {
+        return directionAdversaire.actif;
     }
 
     public Vector3 trouveDirection()
@@ -83,7 +94,7 @@ public class IANeurone : MonoBehaviour {
 
     private Vector3 provoque()
     {
-        Vector3 direction = transform.position - Vector3.zero;
+        Vector3 direction = transform.position - adversaire.transform.position;
         return direction.normalized;
     }
 
@@ -96,14 +107,12 @@ public class IANeurone : MonoBehaviour {
     private double[] interrogeReseau()
     {
         double[] posAdversaire = {convertitValeurPosition(adversaire.transform.position.x),
-                                  convertitValeurPosition(adversaire.transform.position.z)};
-        Direction directionAdversaire = adversaire.GetComponent<Direction>();
+                                  convertitValeurPosition(adversaire.transform.position.z)};        
         double[] dirAdversaire = {convertitDecimal(directionAdversaire.direction.x),
                                   convertitDecimal(directionAdversaire.direction.z) };
 
         double[] posIA = {convertitValeurPosition(transform.position.x),
                           convertitValeurPosition(transform.position.z) };
-        Direction directionIA = GetComponent<Direction>();
         double[] dirIA = {convertitDecimal(directionIA.direction.x),
                           convertitDecimal(directionIA.direction.z) };
 
