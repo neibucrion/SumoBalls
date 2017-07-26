@@ -12,6 +12,12 @@ public class SouvenirCollision
     public Vector3 directionIA;
 }
 
+public class SouvenirEntree
+{
+    public double[] entree;
+    public float timecode;
+}
+
 public class IANeurone : MonoBehaviour {
 
     public GameObject adversaire;
@@ -23,6 +29,7 @@ public class IANeurone : MonoBehaviour {
     public bool trainingFinales = false;
     public bool trainingAttente = false;
     public bool trainingCollisions = false;
+    public float dureeMemoire;
     public float attenteMax;
     public float facteurImmobilite;
     public float angleOffensif;
@@ -36,6 +43,7 @@ public class IANeurone : MonoBehaviour {
     Direction directionAdversaire;
     Direction directionIA;
 
+    private List<SouvenirEntree> entrees;
     private List<SouvenirCollision> collisions;
     private List<double[]> attentes;
     private Vector3 memoirePosition;
@@ -52,6 +60,7 @@ public class IANeurone : MonoBehaviour {
         directionAdversaire = adversaire.GetComponent<Direction>();
         directionIA = GetComponent<Direction>();
         memoirePosition = Vector3.zero;
+        entrees = new List<SouvenirEntree>();
         collisions = new List<SouvenirCollision>();
         attentes = new List<double[]>();
         creeVerbateur();
@@ -162,8 +171,19 @@ public class IANeurone : MonoBehaviour {
 
         double[] inputs = {posAdversaire[0], posAdversaire[1], dirAdversaire[0], dirAdversaire[1], posIA[0], posIA[1], dirIA[0], dirIA[1]};
         derniereEntree = inputs;
+        retientEntrees();
         double[] result = net.Compute(derniereEntree);
         return result;
+    }
+
+    private void retientEntrees()
+    {
+        SouvenirEntree souvenir = new SouvenirEntree();
+        souvenir.entree = derniereEntree;
+        souvenir.timecode = Time.realtimeSinceStartup;
+        entrees.Add(souvenir);
+        if (Time.realtimeSinceStartup - entrees[0].timecode > dureeMemoire)
+            entrees.RemoveAt(0);
     }
 
     private double convertitValeurPosition(float valeur)
@@ -185,7 +205,7 @@ public class IANeurone : MonoBehaviour {
         if (trainingCollisions && collision.gameObject.tag == "joueur")
         {
             SouvenirCollision nouveauSouvenir = new SouvenirCollision();
-            nouveauSouvenir.entreePrecedente = derniereEntree;
+            nouveauSouvenir.entreePrecedente = entrees[0].entree;
             nouveauSouvenir.positionJoueur = adversaire.transform.position;
             nouveauSouvenir.directionJoueur = directionAdversaire.direction;
             nouveauSouvenir.positionIA = transform.position;
@@ -236,7 +256,8 @@ public class IANeurone : MonoBehaviour {
         if (trainingAttente)
             apprendAttentes();
         if (trainingCollisions)
-            analyseCollisions();    
+            analyseCollisions();
+        entrees = new List<SouvenirEntree>();
     }
 
     private void apprendDerniereEntree(bool victoire)
@@ -247,7 +268,7 @@ public class IANeurone : MonoBehaviour {
             desired[0] = 0.9d;
             desired[3] = 0.1d;
         }
-        dataSets.Add(new DataSet(derniereEntree, desired));
+        dataSets.Add(new DataSet(entrees[0].entree, desired));
         net.Train(dataSets, MinimumError);
     }
 
@@ -277,7 +298,8 @@ public class IANeurone : MonoBehaviour {
     {
         double[] retour = { 0.9d, 0.1d, 0.1d, 0.1d };
         Vector3 difference = collision.positionIA - collision.positionJoueur;
-        if (Vector3.Angle(collision.directionJoueur, difference) > angleOffensif)
+        float angle = Vector3.Angle(collision.directionJoueur, difference);
+        if (angle < angleOffensif)
         {
             retour[0] = 0.1d;
             retour[1] = 0.9d;
