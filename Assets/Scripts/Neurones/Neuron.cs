@@ -62,7 +62,6 @@ namespace NeuralNetwork
 					synapse.Weight += synapse.WeightDelta + momentum * prevDelta;
 				}
 			}
-
 	}
 
 	public class Synapse

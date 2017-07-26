@@ -1,17 +1,31 @@
 ﻿using UnityEngine;
-using System.Collections;
 using NeuralNetwork;
 using ChargeurCSV;
-using UnityEngine.UI;
 using System.Collections.Generic;
+
+public class SouvenirCollision
+{
+    public double[] entreePrecedente;
+    public Vector3 positionJoueur;
+    public Vector3 directionJoueur;
+    public Vector3 positionIA;
+    public Vector3 directionIA;
+}
 
 public class IANeurone : MonoBehaviour {
 
     public GameObject adversaire;
-    public double rayonArene;
+    public float rayonArene;
 
     //Neural Network Variables
     public double MinimumError;
+    public bool reseauPrecalcule = false;
+    public bool trainingFinales = false;
+    public bool trainingAttente = false;
+    public bool trainingCollisions = false;
+    public float attenteMax;
+    public float facteurImmobilite;
+    public float angleOffensif;
 
     private const TrainingType TrType = TrainingType.MinimumError;
     private ChargeurTableaux chargeur;
@@ -22,15 +36,45 @@ public class IANeurone : MonoBehaviour {
     Direction directionAdversaire;
     Direction directionIA;
 
+    private List<SouvenirCollision> collisions;
+    private List<double[]> attentes;
+    private Vector3 memoirePosition;
+    private float dureeAttente;
+
+    private Verbateur verba;
+
     // Use this for initialization
     void Start ()
     {
         chargeur = new ChargeurTableaux();
-        net = new NeuralNet(8, 8, 4);
+        net = new NeuralNet(8, 6, 4);
         dataSets = new List<DataSet>();
         directionAdversaire = adversaire.GetComponent<Direction>();
         directionIA = GetComponent<Direction>();
-        entraineReseau();
+        memoirePosition = Vector3.zero;
+        collisions = new List<SouvenirCollision>();
+        attentes = new List<double[]>();
+        creeVerbateur();
+        
+    }
+
+    private void creeVerbateur()
+    {
+        verba = new Verbateur(net);
+        if (reseauPrecalcule)
+        {
+            chargeReseau();
+        }
+        else
+        {
+            entraineReseau();
+        }
+    }
+
+    void chargeReseau()
+    {
+        List<List<double>> sauvegarde = chargeur.chargeTableauDouble("sauvegardeReseau");
+        verba.chargeReseau(sauvegarde);
     }
 
     void entraineReseau()
@@ -94,7 +138,7 @@ public class IANeurone : MonoBehaviour {
 
     private Vector3 provoque()
     {
-        Vector3 direction = transform.position - adversaire.transform.position;
+        Vector3 direction = transform.position - Vector3.zero;
         return direction.normalized;
     }
 
@@ -124,17 +168,78 @@ public class IANeurone : MonoBehaviour {
 
     private double convertitValeurPosition(float valeur)
     {
-        double valFinale = convertitDecimal(valeur / rayonArene);
+        float calcul = convertitDecimal(valeur / (rayonArene*2.0f));
+        calcul = Mathf.Clamp(calcul, 0.0f, 1.0f);
+        double valFinale = calcul;
         return valFinale;
     }
 
-    private double convertitDecimal(double valInitiale)
+    private float convertitDecimal(float valInitiale)
     {
-        double valFinale = (valInitiale + 1.0d)/2.0d;
+        float valFinale = (valInitiale + 1.0f)/2.0f;
         return valFinale;
     }
 
-    public void apprendDerniereEntree(bool victoire)
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (trainingCollisions && collision.gameObject.tag == "joueur")
+        {
+            SouvenirCollision nouveauSouvenir = new SouvenirCollision();
+            nouveauSouvenir.entreePrecedente = derniereEntree;
+            nouveauSouvenir.positionJoueur = adversaire.transform.position;
+            nouveauSouvenir.directionJoueur = directionAdversaire.direction;
+            nouveauSouvenir.positionIA = transform.position;
+            nouveauSouvenir.directionIA = directionIA.direction;
+            collisions.Add(nouveauSouvenir);
+        }
+    }
+
+    public void Update()
+    {
+        if (trainingAttente)
+            verifieAttente();
+    }
+
+    private void verifieAttente()
+    {
+        if (directionIA.actif && verifieImmobile())
+        {
+            dureeAttente += Time.deltaTime;
+            if (dureeAttente > attenteMax)
+            {
+                dureeAttente = 0.0f;
+                attentes.Add(derniereEntree);
+            }
+        }
+        else
+        {
+            memoirePosition = transform.position;
+            dureeAttente = 0.0f;
+        }
+    }
+
+    private bool verifieImmobile()
+    {
+        bool retour = false;
+        Vector3 difference = transform.position - memoirePosition;
+        if (difference.magnitude < rayonArene*2.0f*facteurImmobilite)
+        {
+            retour = true;
+        }
+        return retour;
+    }
+
+    public void metAJourReseau(bool victoire)
+    {
+        if (trainingFinales)
+            apprendDerniereEntree(victoire);
+        if (trainingAttente)
+            apprendAttentes();
+        if (trainingCollisions)
+            analyseCollisions();    
+    }
+
+    private void apprendDerniereEntree(bool victoire)
     {
         double[] desired = { 0.1d, 0.1d, 0.1d, 0.9d };
         if (victoire)
@@ -144,5 +249,92 @@ public class IANeurone : MonoBehaviour {
         }
         dataSets.Add(new DataSet(derniereEntree, desired));
         net.Train(dataSets, MinimumError);
+    }
+
+    private void apprendAttentes()
+    {
+        double[] desired = { 0.1d, 0.1d, 0.9d, 0.1d };
+        foreach (double[] attente in attentes)
+        {
+            dataSets.Add(new DataSet(attente, desired));
+            net.Train(dataSets, MinimumError);
+        }
+        attentes = new List<double[]>();
+    }
+
+    private void analyseCollisions()
+    {
+        foreach (SouvenirCollision souvenir in collisions)
+        {
+            double[] desired = trouveDesir(souvenir);
+            dataSets.Add(new DataSet(souvenir.entreePrecedente, desired));
+            net.Train(dataSets, MinimumError);
+        }
+        collisions = new List<SouvenirCollision>();
+    }
+
+    private double[] trouveDesir(SouvenirCollision collision)
+    {
+        double[] retour = { 0.9d, 0.1d, 0.1d, 0.1d };
+        Vector3 difference = collision.positionIA - collision.positionJoueur;
+        if (Vector3.Angle(collision.directionJoueur, difference) > angleOffensif)
+        {
+            retour[0] = 0.1d;
+            retour[1] = 0.9d;
+        }
+        return retour;
+    }
+
+    public void ecritData()
+    {
+        try
+        {
+            string dataToDump = transformeDataSets();
+            System.IO.File.WriteAllText("dumpData.csv", dataToDump);
+        }
+        catch (System.Exception e)
+        {
+            System.Console.WriteLine("{0}\n", e.Message);
+        }
+    }
+
+    private string transformeDataSets()
+    {
+        string dataFinale = "";
+        foreach (DataSet ds in dataSets)
+        {
+            dataFinale = ajouteData(dataFinale, ds.Values, ",");
+            string finligne = "\n";
+            if (dataSets.IndexOf(ds) == dataSets.Count -1)
+            {
+                finligne = "";
+            }
+            dataFinale = ajouteData(dataFinale, ds.Targets, finligne);
+        }
+        return dataFinale;
+    }
+
+    private string ajouteData(string dataActuelle, double[] tableDouble, string finLigne)
+    {
+        int i = 0;
+        foreach (double value in tableDouble)
+        {
+            i++;
+            dataActuelle += value.ToString();
+            if (i < tableDouble.Length)
+            {
+                dataActuelle += ",";
+            }
+            else
+            {
+                dataActuelle += finLigne;
+            }
+        }
+        return dataActuelle;
+    }
+
+    public void sauveReseau()
+    {
+        verba.sauvegardeReseau();
     }
 }

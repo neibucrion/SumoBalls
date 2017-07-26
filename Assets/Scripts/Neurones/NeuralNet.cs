@@ -64,11 +64,6 @@ namespace NeuralNetwork
 			}
 		}
 
-        private void limiteTemps()
-        {
-
-        }
-
 		private void ForwardPropagate(params double[] inputs)
 		{
 			var i = 0;
@@ -102,12 +97,11 @@ namespace NeuralNetwork
 		{
 			return 2 * Random.NextDouble() - 1;
 		}
-	}
+    }
 
 	public enum TrainingType
 	{
 		Epoch,
 		MinimumError
 	}
-
 }

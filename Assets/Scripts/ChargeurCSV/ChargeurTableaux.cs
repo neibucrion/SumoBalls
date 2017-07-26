@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
 
 namespace ChargeurCSV
 {
@@ -20,7 +18,6 @@ namespace ChargeurCSV
 
         public List<List<string>> chargeTableauString(string nomFichier)
         {
-            Debug.Log("Remplit un tableau de string\n");
             typeValeur = TypeTableau.STRING;
             tableString = new List<List<string>>();
             chargeTableau(nomFichier);
@@ -29,7 +26,6 @@ namespace ChargeurCSV
 
         public List<List<int>> chargeTableauInt(string nomFichier)
         {
-            Debug.Log("Remplit un tableau de int\n");
             typeValeur = TypeTableau.INT;
             tableInt = new List<List<int>>();
             chargeTableau(nomFichier);
@@ -38,7 +34,6 @@ namespace ChargeurCSV
 
         public List<List<double>> chargeTableauDouble(string nomFichier)
         {
-            Debug.Log("Remplit un tableau de double\n");
             typeValeur = TypeTableau.DOUBLE;
             tableDouble = new List<List<double>>();
             chargeTableau(nomFichier);

@@ -24,7 +24,13 @@ public class Arbitre : MonoBehaviour {
 			resetScore();
 
 		if (Input.GetKey(KeyCode.Escape))
-			Application.Quit();
+        {
+            IANeurone IA = joueurRouge.GetComponent<IANeurone>();
+            IA.ecritData();
+            IA.sauveReseau();
+            Application.Quit();
+        }
+			
 	}
 
 	void OnTriggerEnter(Collider other) {
@@ -57,7 +63,7 @@ public class Arbitre : MonoBehaviour {
         if (dirRouge.ia)
         {
             IANeurone IA = joueurRouge.GetComponent<IANeurone>();
-            IA.apprendDerniereEntree(victoire);
+            IA.metAJourReseau(victoire);
         }
     }
 
