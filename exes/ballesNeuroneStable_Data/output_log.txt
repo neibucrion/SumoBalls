@@ -15,14 +15,14 @@ Platform assembly: C:\Users\erniu_000\Dropbox\Jeux Videos Creation\Unity\SumoBal
 Loading C:\Users\erniu_000\Dropbox\Jeux Videos Creation\Unity\SumoBalls\exes\ballesNeuroneStable_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
 Platform assembly: C:\Users\erniu_000\Dropbox\Jeux Videos Creation\Unity\SumoBalls\exes\ballesNeuroneStable_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
 Loading C:\Users\erniu_000\Dropbox\Jeux Videos Creation\Unity\SumoBalls\exes\ballesNeuroneStable_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
-- Completed reload, in  0.216 seconds
+- Completed reload, in  0.025 seconds
 Platform assembly: C:\Users\erniu_000\Dropbox\Jeux Videos Creation\Unity\SumoBalls\exes\ballesNeuroneStable_Data\Managed\System.Core.dll (this message is harmless)
 Platform assembly: C:\Users\erniu_000\Dropbox\Jeux Videos Creation\Unity\SumoBalls\exes\ballesNeuroneStable_Data\Managed\System.dll (this message is harmless)
 desktop: 1920x1080 60Hz; virtual: 1920x1080 at 0,0
 <RI> Initializing input.
 <RI> Input initialized.
 <RI> Initialized touch support.
-UnloadTime: 99.781830 ms
+UnloadTime: 1.044141 ms
 Setting up 2 worker threads for Enlighten.
-  Thread -> id: 4cfc -> priority: 1 
-  Thread -> id: 4cf8 -> priority: 1 
+  Thread -> id: 4240 -> priority: 1 
+  Thread -> id: 4104 -> priority: 1 

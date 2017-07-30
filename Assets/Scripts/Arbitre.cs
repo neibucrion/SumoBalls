@@ -9,14 +9,42 @@ public class Arbitre : MonoBehaviour {
 	public Text texteBleu;
 	public Text texteRouge;
 
+    private GameObject[] joueurs;
 	private int scoreBleu = 0;
 	private int scoreRouge = 0;
+    private bool autoEntraine = true;
 
-	void Start()
+    void Start()
 	{
+        joueurs = GameObject.FindGameObjectsWithTag("joueur");
 		texteRouge.transform.position = new Vector3(100.0f, Screen.height - 50.0f, 0.0f);
 		texteBleu.transform.position = new Vector3(Screen.width -100.0f, Screen.height - 50.0f, 0.0f);
+        trouveAutoEntraine();
 	}
+
+    void trouveAutoEntraine()
+    {
+        autoEntraine = true;
+        foreach (GameObject joueur in joueurs)
+        {
+            IAJeu iaJoueur = joueur.GetComponent<IAJeu>();
+            if (!iaJoueur.IAActive)
+            {
+                autoEntraine = false;
+                break;
+            }
+        }
+        autoActiveJoueurs();
+    }
+
+    void autoActiveJoueurs()
+    {
+        foreach (GameObject joueur in joueurs)
+        {
+            Direction dirJoueur = joueur.GetComponent<Direction>();
+            dirJoueur.actif = autoEntraine;
+        }
+    }
 
 	// Update is called once per frame
 	void Update () {
@@ -25,12 +53,10 @@ public class Arbitre : MonoBehaviour {
 
 		if (Input.GetKey(KeyCode.Escape))
         {
-            IANeurone IA = joueurRouge.GetComponent<IANeurone>();
-            IA.ecritData();
-            IA.sauveReseau();
+            GereNeurone neurone = GetComponent<GereNeurone>();
+            neurone.sauvegardeGenerale();
             Application.Quit();
-        }
-			
+        }			
 	}
 
 	void OnTriggerEnter(Collider other) {
@@ -47,24 +73,31 @@ public class Arbitre : MonoBehaviour {
 		{
 			++scoreBleu;
 			texteBleu.text = "Blue : " + scoreBleu;
-            ajusteIA(false);
 		}
 		else
 		{
 			++scoreRouge;
 			texteRouge.text = "Red : " + scoreRouge;
-            ajusteIA(true);
-        }		
+        }
+        ajusteIA(joueur);	
 	}
 
-    void ajusteIA(bool victoire)
+    void ajusteIA(GameObject gagnant)
     {
-        Direction dirRouge = joueurRouge.GetComponent<Direction>();
-        if (dirRouge.ia)
+        GereNeurone neurone = GetComponent<GereNeurone>();
+        foreach (GameObject joueur in joueurs)
         {
-            IANeurone IA = joueurRouge.GetComponent<IANeurone>();
-            IA.metAJourReseau(victoire);
+            bool victoire = false;
+            if (joueur == gagnant)
+                victoire = true;
+            IAJeu iaJoueur = joueur.GetComponent<IAJeu>();
+            if (iaJoueur.IAActive)
+            {
+                neurone.metAJourReseau(victoire, iaJoueur);
+            }
         }
+        neurone.sauvegardeGenerale();
+        autoActiveJoueurs();
     }
 
     void resetScore()

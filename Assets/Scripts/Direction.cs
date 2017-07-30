@@ -6,7 +6,6 @@ public class Direction : MonoBehaviour {
 	public float patate;    
 	public string nomHorizontal;
 	public string nomVertical;
-    public bool ia = false;
     public bool torque = true;
 
     [HideInInspector]
@@ -17,28 +16,29 @@ public class Direction : MonoBehaviour {
     [HideInInspector]
     public Vector3 direction;
 
+    private IAJeu iajoueur;
+
     void Start()
     {
         positionInitiale = transform.position;
+        iajoueur = GetComponent<IAJeu>();
     }
 
     // Update is called once per frame
-    void Update () {
-		if (ia)
-        {
-            IANeurone iaObjet = GetComponent<IANeurone>();
+    void Update () {        
+		if (iajoueur.IAActive)
+        {            
             direction = Vector3.zero;
             if (!actif)
-                actif = iaObjet.adversaireActif();
+                actif = iajoueur.adversaireActif();
             else
-                direction = iaObjet.trouveDirection();
+                direction = iajoueur.trouveDirection();
         }
         else
         {
             directionManuelle();
         }
         calculeDirection();
-
     }
 
     void directionManuelle()
@@ -50,13 +50,13 @@ public class Direction : MonoBehaviour {
         {
             actif = true;
         }
+        direction = iajoueur.ajusteDirectionSticky();
     }
 
     void calculeDirection()
     {        
         direction = Vector3.ClampMagnitude(direction, 1.0f);
         Vector3 mouvement = direction * patate * Time.deltaTime;
-
         Rigidbody rigid = GetComponent<Rigidbody>();
         if (torque)
         {
